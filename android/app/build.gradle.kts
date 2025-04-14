@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.tasku_peatus"
+    namespace = "me.drigster.tasku_peatus"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = "27.0.12077973"
 

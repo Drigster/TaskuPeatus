@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:tasku_peatus/utils/arivals_parser.dart';
 import '../models/stop.dart';
 import '../utils/geo_utils.dart';
 
@@ -7,7 +8,7 @@ class StopRepository {
 
   StopRepository(this._box);
 
-  List<Stop> getStopsInRadius({
+  List<Stop> _getStopsInRadius({
     required double centerLat,
     required double centerLon,
     required double radiusMeters,
@@ -37,5 +38,41 @@ class StopRepository {
     }
 
     return stopsInRadius;
+  }
+
+  Future<List<StopData>> getArrivalsInRadius({
+    required double centerLat,
+    required double centerLon,
+    required double radiusMeters,
+  }) {
+    final stops = _getStopsInRadius(
+      centerLat: centerLat,
+      centerLon: centerLon,
+      radiusMeters: radiusMeters,
+    );
+    return ArrivalsParser.getArrivals(stops, centerLat, centerLon);
+  }
+
+  Future<List<StopData>?> getArrivalsClosest({
+    required double centerLat,
+    required double centerLon,
+    double startingRadius = 100,
+  }) async {
+    var currentRadius = startingRadius;
+    List<Stop> stops = [];
+    while (currentRadius <= 2500) {
+      print(currentRadius);
+      stops = _getStopsInRadius(
+        centerLat: centerLat,
+        centerLon: centerLon,
+        radiusMeters: currentRadius,
+      );
+      if (stops.isNotEmpty) {
+        break;
+      }
+      currentRadius += 50;
+    }
+    if (stops.isEmpty) return null;
+    return (await ArrivalsParser.getArrivals(stops, centerLat, centerLon));
   }
 }

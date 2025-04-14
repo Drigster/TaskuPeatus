@@ -1,4 +1,4 @@
-package com.example.tasku_peatus
+package me.drigster.tasku_peatus
 
 import io.flutter.embedding.android.FlutterActivity
 
