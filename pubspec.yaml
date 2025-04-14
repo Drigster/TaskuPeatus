@@ -11,13 +11,24 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  json_annotation: ^4.8.1
   intl: ^0.20.2
+  build_runner: ^2.4.15
+  http: ^1.3.0
+  shared_preferences: ^2.5.3
+  xml: ^6.5.0
+  geolocator: ^13.0.4
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  hive_generator: ^2.0.0
 
   flutter_lints: ^5.0.0
 
 flutter:
+  assets:
+    - assets/stops.txt
   uses-material-design: true
