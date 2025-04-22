@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tasku_peatus/pages/home.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:tasku_peatus/utils/stops_parser.dart';
@@ -11,7 +12,19 @@ void main() async {
   Hive.registerAdapter(StopAdapter());
   await Hive.openBox<Stop>('stopsBox');
 
-  await StopsParser.importStops();
+  final prefs = await SharedPreferences.getInstance();
+  final lastModified = StopsParser.getLastModifiedVersion().toString();
+  if (lastModified != prefs.getString("stopsLastModifiedDate")) {
+    try {
+      if ((await StopsParser.importStops())) {
+        prefs.setString("stopsLastModifiedDate", lastModified);
+      }
+    } catch (e) {
+      print(e);
+    }
+  } else {
+    print("No need to update stops");
+  }
 
   runApp(MyApp());
 }
