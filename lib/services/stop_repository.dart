@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:hive/hive.dart';
 import 'package:tasku_peatus/utils/arivals_parser.dart';
 import '../models/stop.dart';
@@ -53,7 +55,7 @@ class StopRepository {
     return ArrivalsParser.getArrivals(stops, centerLat, centerLon);
   }
 
-  Future<List<StopData>?> getArrivalsClosest({
+  Future<List<StopData>> getArrivalsClosest({
     required double centerLat,
     required double centerLon,
     double startingRadius = 100,
@@ -61,18 +63,24 @@ class StopRepository {
     var currentRadius = startingRadius;
     List<Stop> stops = [];
     while (currentRadius <= 2500) {
-      print(currentRadius);
       stops = _getStopsInRadius(
         centerLat: centerLat,
         centerLon: centerLon,
         radiusMeters: currentRadius,
       );
       if (stops.isNotEmpty) {
+        stops = stops.getRange(0, 1).toList();
+        stops.addAll(
+          _getStopsInRadius(
+            centerLat: stops.first.lat,
+            centerLon: stops.first.lon,
+            radiusMeters: 500,
+          ),
+        );
         break;
       }
       currentRadius += 50;
     }
-    if (stops.isEmpty) return null;
     return (await ArrivalsParser.getArrivals(stops, centerLat, centerLon));
   }
 }

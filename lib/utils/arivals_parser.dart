@@ -1,17 +1,10 @@
+import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 import 'package:tasku_peatus/utils/geo_utils.dart';
 import '../models/stop.dart';
 
 class ArrivalsParser {
-  static final _csvRegex = RegExp(r'(?:^|,)(?:"([^"]*)"|([^",]*))');
-
-  static List<String> _parseCsvLine(String line) {
-    return _csvRegex
-        .allMatches(line)
-        .map((match) => match.group(1) ?? match.group(2) ?? '')
-        .toList();
-  }
-
   static Future<List<StopData>> getArrivals(List<Stop> stops, lat, lon) async {
     if (stops.isEmpty) return [];
     print(
@@ -21,7 +14,7 @@ class ArrivalsParser {
         "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${stops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
       ),
     );
-    final data = response.body;
+    final data = utf8.decode(response.bodyBytes);
 
     int typeIndex = 0;
     int routeNumIndex = 1;
@@ -38,11 +31,11 @@ class ArrivalsParser {
 
     for (int i = 0; i < lines.length; i++) {
       if (lines.length == 1) {
-        return [];
+        break;
       }
       if (lines[i].trim() == "") {
         if (i == 1) {
-          return [];
+          break;
         }
         continue;
       }
@@ -69,8 +62,7 @@ class ArrivalsParser {
         final stopId = line[1];
         final currentStop = stops.firstWhere((e) => e.id == stopId);
         stopData = StopData(
-          id: stopId,
-          name: currentStop.name,
+          stop: currentStop,
           distance: GeoUtils.haversine(
                   lat ?? 0, lon ?? 0, currentStop.lat, currentStop.lon)
               .ceil(),
@@ -105,25 +97,37 @@ class ArrivalsParser {
         stopData.departures.add(departure);
       }
     }
-
-    stopsRet.add(stopData!);
-    print(stopsRet.map((e) => e.distance).toList());
+    if (stopData != null) {
+      stopsRet.add(stopData);
+    }
     stopsRet.sort((a, b) => a.distance.compareTo(b.distance));
-    print(stopsRet.map((e) => e.distance).toList());
+    final existingIds = stopsRet.map((item) => item.stop.id).toSet();
+    for (final element in stops) {
+      if (existingIds.add(element.id!)) {
+        stopsRet.add(
+          StopData(
+            stop: element,
+            distance:
+                GeoUtils.haversine(lat ?? 0, lon ?? 0, element.lat, element.lon)
+                    .ceil(),
+            isFavorite: element.isFavorite,
+            departures: [],
+          ),
+        );
+      }
+    }
     return stopsRet;
   }
 }
 
 class StopData {
-  final String id;
-  final String name;
+  final Stop stop;
   final int distance;
   final bool isFavorite;
   final List<Departure> departures;
 
   StopData({
-    required this.id,
-    required this.name,
+    required this.stop,
     required this.distance,
     required this.isFavorite,
     required this.departures,

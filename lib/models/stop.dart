@@ -5,7 +5,7 @@ part 'stop.g.dart'; // Generated file
 @HiveType(typeId: 0)
 class Stop extends HiveObject {
   @HiveField(0)
-  final String? id;
+  final String id;
 
   @HiveField(1)
   String name;
@@ -20,7 +20,7 @@ class Stop extends HiveObject {
   bool isFavorite;
 
   Stop({
-    this.id,
+    required this.id,
     required this.name,
     required this.lat,
     required this.lon,
