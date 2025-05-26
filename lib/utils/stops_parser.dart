@@ -108,6 +108,9 @@ class StopsParser {
           continue;
         }
         final stopId = parts[siriIndex].trim();
+        if (stopId.isEmpty) {
+          continue;
+        }
         if (parts.length <= nameIndex) {
           print("\"$line\" has no name");
           continue;
@@ -117,12 +120,12 @@ class StopsParser {
           print("\"$line\" has no lat");
           continue;
         }
-        final lat = double.parse(parts[latIndex].trim()) / 10000;
+        final lat = double.parse(parts[latIndex]) / 100000;
         if (parts.length <= lonIndex) {
           print("\"$line\" has no lon");
           continue;
         }
-        final lon = double.parse(parts[lonIndex].trim()) / 10000;
+        final lon = double.parse(parts[lonIndex]) / 100000;
 
         final stop = Stop(
           id: stopId,

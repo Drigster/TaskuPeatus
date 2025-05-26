@@ -26,10 +26,53 @@ class ArrivalWidget extends StatefulWidget {
 }
 
 class _ArrivalWidgetState extends State<ArrivalWidget> {
+  Timer? offsetTimer;
+  Timer? periodicTimer;
+  late DateTime expectedTime;
+  late Duration untilExpectedTime;
+
+  @override
+  void initState() {
+    super.initState();
+    expectedTime = DateTime.now().copyWith(
+        hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0);
+    expectedTime = expectedTime.add(Duration(seconds: widget.expectedSeconds));
+    untilExpectedTime = expectedTime.difference(DateTime.now());
+    
+    // Align to the next second
+    final now = DateTime.now();
+    final millisecondsUntilNextSecond = 1000 - now.millisecond;
+    offsetTimer = Timer(Duration(milliseconds: millisecondsUntilNextSecond), () {
+      // Start the periodic timer after alignment
+      periodicTimer = Timer.periodic(Duration(seconds: 1), (Timer t) {
+        if (mounted) {
+          setState(() {
+            // Update the remaining time
+            untilExpectedTime = expectedTime.difference(DateTime.now());
+
+            // Stop the timer if the countdown is complete
+            if (untilExpectedTime.isNegative || untilExpectedTime.inSeconds == 0) {
+              periodicTimer?.cancel();
+            }
+          });
+        } else {
+          // If widget is not mounted anymore, cancel the timer
+          periodicTimer?.cancel();
+        }
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    offsetTimer?.cancel();
+    periodicTimer?.cancel();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    Timer? timer;
 
     IconData typeIcon;
     Color typeColor;
@@ -99,29 +142,6 @@ class _ArrivalWidgetState extends State<ArrivalWidget> {
     }
 
     DateFormat dateFormater = DateFormat('HH:mm');
-    DateTime expectedTime = DateTime.now().copyWith(
-        hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0);
-    expectedTime = expectedTime.add(Duration(seconds: widget.expectedSeconds));
-    Duration untilExpectedTime = expectedTime.difference(DateTime.now());
-
-    final now = DateTime.now();
-    final millisecondsUntilNextSecond = 1000 - now.millisecond;
-    Timer(Duration(milliseconds: millisecondsUntilNextSecond), () {
-      // Start the periodic timer after alignment
-      timer = Timer.periodic(Duration(seconds: 1), (Timer t) {
-        setState(() {
-          // Update the remaining time
-          untilExpectedTime = expectedTime.difference(DateTime.now());
-
-          // Stop the timer if the countdown is complete
-          if (untilExpectedTime.isNegative ||
-              untilExpectedTime.inSeconds == 0) {
-            timer?.cancel();
-          }
-        });
-      });
-    });
-
     List<String> scheduleTimeStrins = List.empty(growable: true);
     DateTime today = DateTime.now().copyWith(
         hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0);

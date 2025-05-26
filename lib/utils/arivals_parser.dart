@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:tasku_peatus/utils/geo_utils.dart';
@@ -7,14 +8,20 @@ import '../models/stop.dart';
 class ArrivalsParser {
   static Future<List<StopData>> getArrivals(List<Stop> stops, lat, lon) async {
     if (stops.isEmpty) return [];
-    print(
-        "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${stops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}");
-    final response = await http.get(
-      Uri.parse(
-        "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${stops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
-      ),
-    );
-    final data = utf8.decode(response.bodyBytes);
+    String data = "";
+    int takeCursor = 0;
+    while (stops.length >= takeCursor) {
+      var reqStops =
+          stops.sublist(takeCursor, min((takeCursor += 10), stops.length));
+      print(
+          "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}");
+      final response = await http.get(
+        Uri.parse(
+          "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
+        ),
+      );
+      data += utf8.decode(response.bodyBytes).trim();
+    }
 
     int typeIndex = 0;
     int routeNumIndex = 1;
@@ -40,7 +47,7 @@ class ArrivalsParser {
         continue;
       }
       List<String> line = lines[i].split(",");
-      if (i == 0) {
+      if (line.contains("ExpectedTimeInSeconds")) {
         for (int j = 0; j < line.length; j++) {
           if (line[j].startsWith("version")) {
             String version = line[j].replaceAll("version", "");
