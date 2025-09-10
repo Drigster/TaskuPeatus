@@ -11,10 +11,13 @@ class ArrivalsParser {
     String data = "";
     int takeCursor = 0;
     while (stops.length >= takeCursor) {
-      var reqStops =
-          stops.sublist(takeCursor, min((takeCursor += 10), stops.length));
+      var reqStops = stops.sublist(
+        takeCursor,
+        min((takeCursor += 5), stops.length),
+      );
       print(
-          "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}");
+        "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
+      );
       final response = await http.get(
         Uri.parse(
           "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
@@ -71,8 +74,11 @@ class ArrivalsParser {
         stopData = StopData(
           stop: currentStop,
           distance: GeoUtils.haversine(
-                  lat ?? 0, lon ?? 0, currentStop.lat, currentStop.lon)
-              .ceil(),
+            lat ?? 0,
+            lon ?? 0,
+            currentStop.lat,
+            currentStop.lon,
+          ).ceil(),
           isFavorite: currentStop.isFavorite,
           departures: [],
         );
@@ -84,10 +90,12 @@ class ArrivalsParser {
         continue;
       }
 
-      if (stopData!.departures
-          .any((e) => e.routeNumber == line[routeNumIndex])) {
-        var departures = stopData.departures
-            .firstWhere((e) => e.routeNumber == line[routeNumIndex]);
+      if (stopData!.departures.any(
+        (e) => e.routeNumber == line[routeNumIndex],
+      )) {
+        var departures = stopData.departures.firstWhere(
+          (e) => e.routeNumber == line[routeNumIndex],
+        );
         if (departures.scheduleSeconds.length < 5) {
           departures.scheduleSeconds.add(int.parse(line[scheduleTimeIndex]));
         }
@@ -110,13 +118,16 @@ class ArrivalsParser {
     stopsRet.sort((a, b) => a.distance.compareTo(b.distance));
     final existingIds = stopsRet.map((item) => item.stop.id).toSet();
     for (final element in stops) {
-      if (existingIds.add(element.id!)) {
+      if (existingIds.add(element.id)) {
         stopsRet.add(
           StopData(
             stop: element,
-            distance:
-                GeoUtils.haversine(lat ?? 0, lon ?? 0, element.lat, element.lon)
-                    .ceil(),
+            distance: GeoUtils.haversine(
+              lat ?? 0,
+              lon ?? 0,
+              element.lat,
+              element.lon,
+            ).ceil(),
             isFavorite: element.isFavorite,
             departures: [],
           ),

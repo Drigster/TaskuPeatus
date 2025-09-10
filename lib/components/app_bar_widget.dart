@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tasku_peatus/pages/test.dart';
 
 class AppBarWidget extends StatelessWidget {
   const AppBarWidget({
@@ -19,6 +20,15 @@ class AppBarWidget extends StatelessWidget {
       title: Text("Timetable", style: style),
       centerTitle: true,
       leading: GestureDetector(
+        onTap: () => {
+          print("test"),
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => TestPage(),
+            ),
+          )
+        },
         child: Icon(Icons.menu, color: theme.colorScheme.onSecondary),
       ),
       actions: [

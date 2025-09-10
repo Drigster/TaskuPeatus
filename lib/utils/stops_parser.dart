@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:tasku_peatus/models/route.dart';
 import '../models/stop.dart';
 
 class StopsParser {
