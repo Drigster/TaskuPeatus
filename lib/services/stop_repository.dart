@@ -20,7 +20,8 @@ class StopRepository {
     // 2. Filter stops using bounding box
     final candidates = _box.values.where((stop) {
       return (stop.lat - centerLat).abs() <= latDelta &&
-          (stop.lon - centerLon).abs() <= lonDelta;
+          (stop.lon - centerLon).abs() <= lonDelta &&
+          stop.transports.isNotEmpty;
     }).toList();
 
     // 3. Calculate exact distances for candidates

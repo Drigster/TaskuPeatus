@@ -16,11 +16,11 @@ class ArrivalsParser {
         min((takeCursor += 5), stops.length),
       );
       print(
-        "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
+        "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.siriId).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
       );
       final response = await http.get(
         Uri.parse(
-          "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.id).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
+          "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.siriId).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
         ),
       );
       data += utf8.decode(response.bodyBytes).trim();
@@ -69,8 +69,8 @@ class ArrivalsParser {
           stopsRet.add(stopData);
           stopData = null;
         }
-        final stopId = line[1];
-        final currentStop = stops.firstWhere((e) => e.id == stopId);
+        final siriId = line[1];
+        final currentStop = stops.firstWhere((e) => e.siriId == siriId);
         stopData = StopData(
           stop: currentStop,
           distance: GeoUtils.haversine(
@@ -116,9 +116,9 @@ class ArrivalsParser {
       stopsRet.add(stopData);
     }
     stopsRet.sort((a, b) => a.distance.compareTo(b.distance));
-    final existingIds = stopsRet.map((item) => item.stop.id).toSet();
+    final existingIds = stopsRet.map((item) => item.stop.siriId).toSet();
     for (final element in stops) {
-      if (existingIds.add(element.id)) {
+      if (existingIds.add(element.siriId)) {
         stopsRet.add(
           StopData(
             stop: element,

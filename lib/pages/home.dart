@@ -318,11 +318,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         padding: const EdgeInsets.all(4),
         itemCount: _stops.length,
         itemBuilder: (context, index) => StopWidget(
-          id: stops[index].stop.id,
+          siriId: stops[index].stop.siriId,
           name: stops[index].stop.name,
           distance: stops[index].distance,
           isFavorite: stops[index].isFavorite,
           departures: stops[index].departures,
+          transports: stops[index].stop.transports,
         ),
         separatorBuilder: (context, index) => const SizedBox(height: 4),
       ),

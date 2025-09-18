@@ -17,20 +17,22 @@ class StopAdapter extends TypeAdapter<Stop> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return Stop(
-      id: fields[0] as String,
-      name: fields[1] as String,
-      lat: fields[2] as double,
-      lon: fields[3] as double,
-      isFavorite: fields[4] as bool,
+      siriId: (fields[0] as String?) ?? '',
+      stopId: (fields[6] as String?) ?? '',
+      name: (fields[1] as String?) ?? '',
+      lat: (fields[2] as num?)?.toDouble() ?? 0.0,
+      lon: (fields[3] as num?)?.toDouble() ?? 0.0,
+      isFavorite: (fields[4] as bool?) ?? false,
+      transports: (fields[5] as Map?)?.cast<String, String>(),
     );
   }
 
   @override
   void write(BinaryWriter writer, Stop obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(7)
       ..writeByte(0)
-      ..write(obj.id)
+      ..write(obj.siriId)
       ..writeByte(1)
       ..write(obj.name)
       ..writeByte(2)
@@ -38,7 +40,11 @@ class StopAdapter extends TypeAdapter<Stop> {
       ..writeByte(3)
       ..write(obj.lon)
       ..writeByte(4)
-      ..write(obj.isFavorite);
+      ..write(obj.isFavorite)
+      ..writeByte(5)
+      ..write(obj.transports)
+      ..writeByte(6)
+      ..write(obj.stopId);
   }
 
   @override

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tasku_peatus/pages/home.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:tasku_peatus/pages/test.dart';
+import 'package:tasku_peatus/utils/route_parser.dart';
 import 'package:tasku_peatus/utils/stops_parser.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'models/stop.dart';
@@ -22,6 +22,7 @@ void main() async {
       if ((await StopsParser.importStops())) {
         prefs.setString("stopsLastModifiedDate", lastModified);
       }
+      await RouteParser.parseRoutes();
     } catch (e) {
       print(e);
     }

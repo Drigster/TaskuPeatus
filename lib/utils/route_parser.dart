@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:math';
 
+import 'package:hive/hive.dart';
 import 'package:http/http.dart' as http;
 import '../models/stop.dart';
 
@@ -18,20 +20,26 @@ class RouteParser {
     List<Stop> newStops = [];
     bool parsedWithErrors = false;
 
+    final stopsBox = Hive.box<Stop>('stopsBox');
+
     final response = await http.get(Uri.parse(_routesUrl));
     final data = utf8.decode(response.bodyBytes);
     final lines = data.split('\n'); // Skip header
 
     final header = lines[0].split(";");
-    final siriIndex = header.indexOf("SiriID");
-    final latIndex = header.indexOf("Lat");
-    final lonIndex = header.indexOf("Lng");
-    final nameIndex = header.indexOf("Name");
+    final routeNumIndex = header.indexOf("RouteNum");
+    final transportIndex = header.indexOf("Transport");
+    final validityPeriodsIndex = header.indexOf("ValidityPeriods");
+    final specialDatesIndex = header.indexOf("SpecialDates");
+    final routeStopsIndex = header.indexOf("RouteStops");
 
     List<String> previousParts = List.filled(header.length, "");
 
     for (var i = 1; i < lines.length; i++) {
       final line = lines[i];
+
+      // Skip comments
+      if (line.startsWith("#")) continue;
 
       final parts = _parseCsvLine(line);
       if (parts.length < header.length) {
@@ -47,37 +55,50 @@ class RouteParser {
       }
 
       try {
-        if (parts.length <= siriIndex) {
-          print("\"$line\" has no stopID");
+        final routeNum = parts[routeNumIndex].trim();
+        if (routeNum.isEmpty) {
           continue;
         }
-        final stopId = parts[siriIndex].trim();
-        if (stopId.isEmpty) {
-          continue;
-        }
-        if (parts.length <= nameIndex) {
-          print("\"$line\" has no name");
-          continue;
-        }
-        final name = parts[nameIndex].trim();
-        if (parts.length <= latIndex) {
-          print("\"$line\" has no lat");
-          continue;
-        }
-        final lat = double.parse(parts[latIndex]) / 100000;
-        if (parts.length <= lonIndex) {
-          print("\"$line\" has no lon");
-          continue;
-        }
-        final lon = double.parse(parts[lonIndex]) / 100000;
 
-        final stop = Stop(
-          id: stopId,
-          name: name,
-          lat: lat,
-          lon: lon,
-        );
-        newStops.add(stop);
+        final transportType = parts[transportIndex].trim();
+        if (transportType.isEmpty) {
+          continue;
+        }
+
+        final validityPeriods = parts[validityPeriodsIndex].trim().split(",");
+        if (validityPeriods.isEmpty) {
+          continue;
+        }
+
+        final specialDates = parts[specialDatesIndex].trim().split(",");
+        if (specialDates.isEmpty) {
+          continue;
+        }
+
+        final routeStops = parts[routeStopsIndex].trim().split(",");
+        if (routeStops.isEmpty) {
+          continue;
+        }
+
+        if (transportType == "") {
+          continue;
+        }
+
+        print("Parsed route $routeNum");
+
+        for (var j = 0; j < routeStops.length; j++) {
+          final stopId = routeStops[j];
+          var stop =
+              stopsBox.values.firstWhere((stop) => stop.stopId == stopId);
+
+          if (stop.transports[transportType] == null) {
+            stop.transports[transportType] = <String>{};
+          }
+
+          stop.transports[transportType]!.add(routeNum);
+        }
+
+        i++;
       } catch (e) {
         print('Error parsing line: $line\nError: $e');
         parsedWithErrors = true;
@@ -85,6 +106,8 @@ class RouteParser {
     }
 
     //return (newStops, parsedWithErrors);
+
+    //stopsBox.close();
 
     return "OK";
   }
@@ -104,6 +127,22 @@ class TimetableData {
     required this.validFrom,
     required this.validTo,
   });
+}
+
+String getData() {
+  final _csvRegex = RegExp(r'(?:"([^"]*)"|([^";]*))(?:;|$)');
+  final _stopsUrl = "https://transport.tallinn.ee/data/stops.txt";
+
+  List<String> _parseCsvLine(String line) {
+    return _csvRegex
+        .allMatches(line)
+        .map((match) => match.group(1) ?? match.group(2) ?? '')
+        .toList();
+  }
+
+  explodeTimes(
+      "+331,+18,+17,+16,+16,+15,+15,+13,+14,+14,+14,+16,+18,+20,+20,+16,+17,+19,+20,+23,+24,+24,+24,+15,+19,+19,+22,+20,+20,+18,+18,+16,+16,+15,+14,+15,+15,+15,+16,+16,+18,+18,+20,+20,+23,+24,+25,+25,+25,+25,+25,+22,+26,+26,+26,+28,+28,-01067,+27,+26,+25,+24,+24,+20,+20,+22,+22,+23,+23,+20,+20,+22,+22,+22,+20,+20,+20,+22,+24,+24,+24,+22,+18,+18,+18,+20,+22,+20,+22,+22,+22,+22,+28,+28,+29,+28,+26,+28,+27,+27,+27,+27,+26,+26,-01069,+27,+26,+25,+24,+24,+20,+20,+22,+22,+23,+23,+20,+20,+22,+22,+22,+20,+20,+20,+22,+24,+24,+24,+22,+18,+18,+18,+20,+22,+20,+22,+22,+22,+22,+28,+28,+29,+28,+26,+28,+27,+27,+27,+27,+26,+26,,20332,57,20240,,0,,12345,57,6,47,7,,1,,1,,1,7,6,38,4,,2,7,6,12,4,13,6,18,4,24,6,19,4,28,6,19,4,,1,4,6,3,4,12,6,13,4,38,6,4,4,43,6,4,4,,2,4,4,3,6,12,4,13,6,17,4,1,6,7,4,2,6,42,4,5,6,42,4,,1,4,6,49,4,11,6,6,4,23,6,7,4,1,6,3,4,7,6,6,4,23,6,7,4,1,6,,1,,1,45,4,4,6,,1,4,6,41,6,4,4,4,4,4,6,44,4,3,6,44,4,,2,74,6,19,4,28,6,19,4,,1,3,6,1,4,15,6,26,4,8,6,4,4,6,6,1,4,6,6,4,4,36,6,1,4,6,6,4,4,,1,19,4,13,6,12,4,1,6,25,4,4,6,43,4,4,6,,2,3,4,1,6,28,4,12,6,1,4,4,6,1,4,9,6,4,4,1,6,6,6,4,4,26,4,1,6,3,4,2,6,4,4,1,6,6,6,4,4,26,4,1,6,,1,3,6,1,4,28,6,12,4,1,6,4,4,1,6,3,4,10,6,1,4,36,6,1,4,9,6,1,4,36,6,1,4,,2,6,6,46,4,1,6,10,4,6,6,29,4,3,6,2,4,1,6,6,4,6,6,29,4,3,6,2,4,,2,4,6,28,4,3,6,10,4,4,6,4,4,10,6,7,4,4,6,18,4,1,6,7,4,10,6,7,4,4,6,18,4,1,6,7,4,,2,6,6,25,4,1,6,17,4,8,4,2,6,14,6,1,4,26,6,1,4,3,4,2,6,14,6,1,4,26,6,1,4,,3,3,6,1,4,1,7,1,4,25,6,1,4,2,6,1,4,17,4,1,6,3,4,2,7,1,4,11,6,3,4,19,6,1,4,7,4,2,4,1,6,2,7,1,4,11,6,3,4,19,6,1,4,7,4,2,4,1,6,,2,35,6,8,4,27,4,3,6,19,4,1,6,24,4,3,6,19,4,1,6,,1,4,6,13,4,13,6,1,4,3,6,1,4,8,6,5,4,1,6,1,4,20,6,23,4,8,6,2,4,14,6,23,4,8,6,2,4,,2,3,4,3,6,11,4,2,6,13,6,2,4,10,4,1,6,4,4,1,6,8,4,1,6,11,4,2,6,1,4,1,6,18,4,1,6,7,4,4,6,1,4,1,6,11,4,2,6,1,4,1,6,18,4,1,6,7,4,,1,3,6,1,4,1,6,1,4,11,6,2,4,11,6,4,4,1,6,8,4,1,6,1,4,25,6,2,4,20,6,1,4,24,6,2,4,20,6,1,4,,1,2,6,15,4,2,6,11,4,1,6,1,4,2,6,9,4,26,6,1,4,2,6,2,4,26,6,1,4,15,6,1,4,2,6,2,4,26,6,1,4,,1,33,6,1,4,23,4,1,6,10,6,1,4,35,4,1,6,10,6,1,4,,1,6,6,13,4,11,6,1,4,3,6,1,4,8,6,5,4,1,6,1,4,7,6,2,4,3,6,1,4,1,6,4,4,2,6,2,4,2,6,17,4,2,6,4,4,7,6,2,4,3,6,1,4,1,6,4,4,2,6,2,4,2,6,17,4,2,6,4,4,,1,4,6,2,4,25,6,3,4,1,6,8,4,5,6,1,4,1,6,1,4,12,6,1,4,9,6,1,4,36,6,1,4,9,6,1,4,,1,,");
+  return "OK";
 }
 
 TimetableData explodeTimes(String encodedData) {
