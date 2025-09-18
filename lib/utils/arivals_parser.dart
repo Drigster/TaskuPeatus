@@ -23,6 +23,10 @@ class ArrivalsParser {
           "https://transport.tallinn.ee/siri-stop-departures.php?stopid=${reqStops.map((e) => e.siriId).join(',')}&time=${DateTime.now().millisecondsSinceEpoch}",
         ),
       );
+      if (response.body.startsWith("ERROR")) {
+        // TODO: Handle errors
+        throw Exception("API ERROR");
+      }
       data += utf8.decode(response.bodyBytes).trim();
     }
 
