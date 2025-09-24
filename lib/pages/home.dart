@@ -76,12 +76,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
         if (untilExpectedTime.inSeconds > 300) {
           duration = min(60, duration);
-        } else if (untilExpectedTime.inSeconds > 180) {
-          duration = min(30, duration);
         } else if (untilExpectedTime.inSeconds > 60) {
-          duration = min(15, duration);
+          duration = min(30, duration);
         } else {
-          duration = min(5, duration);
+          duration = min(15, duration);
         }
       }
     }
