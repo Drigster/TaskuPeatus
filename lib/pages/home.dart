@@ -32,6 +32,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void initState() {
     _state = 'Init state';
     super.initState();
+
+    AppLifecycleListener(
+      onResume: () => {_state = "Resumed", _updateStopsTimer()},
+    );
+
     _state = 'Init stopsBox';
     stopsBox = Hive.box<Stop>('stopsBox');
     _state = '_fetchStops';
@@ -69,14 +74,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             expectedTime.add(Duration(seconds: departure.expectedSeconds));
         Duration untilExpectedTime = expectedTime.difference(DateTime.now());
 
-        if (untilExpectedTime.inSeconds < 30) {
-          duration = min(5, duration);
-        } else if (untilExpectedTime.inSeconds < 60) {
-          duration = min(15, duration);
-        } else if (untilExpectedTime.inSeconds < 180) {
-          duration = min(30, duration);
-        } else if (untilExpectedTime.inSeconds < 300) {
+        if (untilExpectedTime.inSeconds > 300) {
           duration = min(60, duration);
+        } else if (untilExpectedTime.inSeconds > 180) {
+          duration = min(30, duration);
+        } else if (untilExpectedTime.inSeconds > 60) {
+          duration = min(15, duration);
+        } else {
+          duration = min(5, duration);
         }
       }
     }
